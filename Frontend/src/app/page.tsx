@@ -560,7 +560,7 @@ const extractSelectedText = async (): Promise<void> => {
             <div>
               <h3 className="font-medium text-purple-800 mb-1">how to use this thing</h3>
               <p className="text-purple-700 text-sm leading-relaxed">
-                click and drag over text to highlight it. pick a color, maybe add a link, then download your pdf. 
+                click and drag exactly over text to highlight it. pick a color, maybe add a link, then download your pdf. 
                 that's literally it.
               </p>
             </div>

@@ -1,3 +1,4 @@
+
 package com.PdfAnnotation.pdfannotation.service;
 
 import com.PdfAnnotation.pdfannotation.dto.AnnotationRequest;
@@ -56,7 +57,7 @@ private void applyAnnotation(PDDocument document, AnnotationRequest annotation) 
     float pdfHeight = pageSize.getHeight();
 
     logger.info("PDF page dimensions: {}x{}", pdfWidth, pdfHeight);
-    
+
     float finalX, finalY, finalWidth, finalHeight;
     
     if (annotation.getCanvasWidth() != null && annotation.getCanvasHeight() != null) {
@@ -107,96 +108,96 @@ private void applyAnnotation(PDDocument document, AnnotationRequest annotation) 
         addHyperlink(page, annotation, finalX, finalY, finalWidth, finalHeight);
     }
 }
-private void coverOriginalText(PDDocument document, PDPage page, 
+    private void coverOriginalText(PDDocument document, PDPage page, 
                                  float x, float y, float width, float height) throws IOException {
-     try (PDPageContentStream contentStream = new PDPageContentStream(
-        document, page, PDPageContentStream.AppendMode.APPEND, true, true)) {
+        try (PDPageContentStream contentStream = new PDPageContentStream(
+                document, page, PDPageContentStream.AppendMode.APPEND, true, true)) {
 
-        contentStream.setNonStrokingColor(Color.WHITE);
-        contentStream.addRect(x, y, width, height);
-        contentStream.fill();
+            contentStream.setNonStrokingColor(Color.WHITE);
+            
+            contentStream.addRect(x, y, width, height);
+            contentStream.fill();
 
-        logger.info("Covered original text area at ({}, {}) with dimensions {}x{}", x, y, width, height);
-    }
-}
-private void addStyledAnnotationText(PDDocument document, PDPage page, AnnotationRequest annotation,
-    float x, float y, float width, float height) throws IOException {
-
-    try (PDPageContentStream contentStream = new PDPageContentStream(
-    document, page, PDPageContentStream.AppendMode.APPEND, true, true)) {
-
-    PDFont font = getFont(annotation.getFontStyle());
-    float fontSize = annotation.getFontSize() != null ? annotation.getFontSize() : 12f;
-
-    String text = annotation.getSelectedText();
-
-    // Calculate text dimensions
-    float textWidth = font.getStringWidth(text) / 1000f * fontSize;
-    float textHeight = font.getFontDescriptor().getCapHeight() / 1000f * fontSize;
-
-    float descent = font.getFontDescriptor().getDescent() / 1000f * fontSize;
-    float textX = x;
-    float textY = y + (height - textHeight) / 2f - descent;
-
-    // Center horizontally if space allows
-    if (textWidth < width) {
-    textX = x + (width - textWidth) / 2f;
-    }
-
-    PDColor textColor = parseColor(annotation.getColor());
-
-    if (annotation.getBackgroundColor() != null && !annotation.getBackgroundColor().trim().isEmpty()) {
-    PDColor backgroundColor = parseColor(annotation.getBackgroundColor());
-    contentStream.setNonStrokingColor(backgroundColor);
-    contentStream.addRect(x, y, width, height);
-    contentStream.fill();
-    }
-
-    // Draw the text
-    float leading = 1.5f * fontSize; 
-    float cursorX = x + 2; 
-    float cursorY = y + height - fontSize; 
-
-    contentStream.beginText();
-    contentStream.setFont(font, fontSize);
-    contentStream.setNonStrokingColor(textColor);
-    contentStream.newLineAtOffset(cursorX, cursorY);
-
-    String[] words = text.split(" ");
-    StringBuilder lineBuilder = new StringBuilder();
-
-    for (String word : words) {
-        String testLine = lineBuilder.length() == 0 ? word : lineBuilder + " " + word;
-        float size = font.getStringWidth(testLine) / 1000f * fontSize;
-
-        if (cursorY < y) break; 
-        if (size > width - 4) { 
-            contentStream.showText(lineBuilder.toString());
-            contentStream.newLineAtOffset(0, -leading);
-            cursorY -= leading;
-            lineBuilder = new StringBuilder(word);
-        } else {
-            lineBuilder = new StringBuilder(testLine);
+            logger.info("Covered original text area at ({}, {}) with dimensions {}x{}", x, y, width, height);
         }
     }
+    private void addStyledAnnotationText(PDDocument document, PDPage page, AnnotationRequest annotation,
+    float x, float y, float width, float height) throws IOException {
+try (PDPageContentStream contentStream = new PDPageContentStream(
+document, page, PDPageContentStream.AppendMode.APPEND, true, true)) {
 
-    if (cursorY >= y && lineBuilder.length() > 0) {
+PDFont font = getFont(annotation.getFontStyle());
+float fontSize = annotation.getFontSize() != null ? annotation.getFontSize() : 12f;
+
+String text = annotation.getSelectedText();
+
+float textWidth = font.getStringWidth(text) / 1000f * fontSize;
+float textHeight = font.getFontDescriptor().getCapHeight() / 1000f * fontSize;
+
+float descent = font.getFontDescriptor().getDescent() / 1000f * fontSize;
+float textX = x;
+float textY = y + (height - textHeight) / 2f - descent;
+
+if (textWidth < width) {
+textX = x + (width - textWidth) / 2f;
+}
+
+PDColor textColor = parseColor(annotation.getColor());
+
+if (annotation.getBackgroundColor() != null && !annotation.getBackgroundColor().trim().isEmpty()) {
+PDColor backgroundColor = parseColor(annotation.getBackgroundColor());
+contentStream.setNonStrokingColor(backgroundColor);
+contentStream.addRect(x, y, width, height);
+contentStream.fill();
+}
+
+float leading = 1.5f * fontSize; 
+float cursorX = x + 2;
+float cursorY = y + height - fontSize; 
+
+contentStream.beginText();
+contentStream.setFont(font, fontSize);
+contentStream.setNonStrokingColor(textColor);
+contentStream.newLineAtOffset(cursorX, cursorY);
+
+String[] words = text.split(" ");
+StringBuilder lineBuilder = new StringBuilder();
+
+for (String word : words) {
+    String testLine = lineBuilder.length() == 0 ? word : lineBuilder + " " + word;
+    float size = font.getStringWidth(testLine) / 1000f * fontSize;
+
+    if (cursorY < y) break;
+
+    if (size > width - 4) { 
         contentStream.showText(lineBuilder.toString());
+        contentStream.newLineAtOffset(0, -leading);
+        cursorY -= leading;
+        lineBuilder = new StringBuilder(word);
+    } else {
+        lineBuilder = new StringBuilder(testLine);
     }
-    contentStream.endText();
+}
+
+// Draw the remaining line
+if (cursorY >= y && lineBuilder.length() > 0) {
+    contentStream.showText(lineBuilder.toString());
+}
+contentStream.endText();
 
 
-    if (annotation.getBorderColor() != null && !annotation.getBorderColor().trim().isEmpty()) {
-    PDColor borderColor = parseColor(annotation.getBorderColor());
-    contentStream.setStrokingColor(borderColor);
-    contentStream.setLineWidth(annotation.getBorderWidth() != null ? annotation.getBorderWidth() : 1f);
-    contentStream.addRect(x, y, width, height);
-    contentStream.stroke();
-    }
+// Optional: Border
+if (annotation.getBorderColor() != null && !annotation.getBorderColor().trim().isEmpty()) {
+PDColor borderColor = parseColor(annotation.getBorderColor());
+contentStream.setStrokingColor(borderColor);
+contentStream.setLineWidth(annotation.getBorderWidth() != null ? annotation.getBorderWidth() : 1f);
+contentStream.addRect(x, y, width, height);
+contentStream.stroke();
+}
 
-    logger.info("Added styled text '{}' at ({}, {}) with font '{}' and size {}",
-    text, textX, textY, annotation.getFontStyle(), fontSize);
-    }
+logger.info("Added styled text '{}' at ({}, {}) with font '{}' and size {}",
+text, textX, textY, annotation.getFontStyle(), fontSize);
+}
 }
 
 
